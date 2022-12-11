@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+      *, html, body {
+        font-family: 'Poppins', sans-serif;
+      }
+    </style>
+
+    <title>Report submission</title>
+  </head>
+  <body class="lg:px-40 p-3">
+    <p class="text-lg mb-3">Submission time: 
+      <span id="submission_time">7:00</span> 
+    </p>
+
+    <table class="table-auto border border-black w-full mb-5">
+      <thead>
+        <tr>
+          <th class="border border-black">Matric Number</th>
+          <th class="border border-black">Score</th>
+          <th class="border border-black">Time submitted</th>
+          <th class="border border-black">Penalty</th>
+          <th class="border border-black">Total Score</th>
+        </tr>
+      </thead>
+      <tbody id="entries">
+      </tbody>
+    </table>
+
+    <div class="flex justify-between items-stretch flex-wrap gap-3 my-3">
+      <div class="border border-black p-3 md:w-[49%]">
+        <p class="text-sm mb-4 border-b border-black">Make a submission</p>
+
+        <form action="#" id="submission_form">
+          <div class="flex flex-col justify-center gap-3 items-start w-full">
+            <div class="flex flex-col w-full">
+              <label for="matric_number" class="block text-xs text-black">Matric Number</label>
+              <input type="number" name="matric_number" id="matric_number" class="rounded border border-gray-500 p-1 block focus:border-black focus:outline-none">
+              <p class="text-xs text-red-400" id="form_error"></p>
+            </div>
+            <button type="submit" class="block bg-black text-sm text-white hover:bg-gray-500 px-3 py-2 rounded w-full mt-1">
+              Submit
+            </button>
+          </div>
+        </form>
+
+        <p class="text-xs mt-3">
+          For demo purposes, a random grade between 70-100 will be generated for every submission made.
+        </p>
+      </div>
+
+      <div class="p-2 border border-black flex justify-center items-center md:w-[49%]">
+        <div class="">
+          <p class="text-sm">
+            Please note any submissions made after the time stated above will incur an incremental
+            penalty.
+          </p>
+          <p class="text-sm font-semibold mt-2">
+            Penalty: for every "y" hour after submission time is equivalent to -5 multiplied "y" points.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Snackbar for notification -->
+    <div class="transition invisible fixed bg-black text-white text-xs py-2 px-5 right-0 top-0 m-4" id="snackbar">
+      🎉 Report submitted
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <script>
+      function toTime(_hour = 12) { // utility function
+        let med = "am";
+        if (_hour > 12) {
+          _hour = _hour - 12;
+          med = "pm";
+        }
+        return `${_hour}:00 ${med}`
+      }
+
+      var entries = [
+        {
+          matricNumber: "170211022",
+          score: 95,
+        },
+        {
+          matricNumber: "170211023",
+          score: 100,
+        },
+        {
+          matricNumber: "170211024",
+          score: 80,
+        },
+      ];
+      // calculate submission time
+      var date = new Date(); // todays date
+      var submissionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() - 2); // submission date => 2hrs backwards
+      var hour = submissionDate.getHours() || 12;
+      $("#submission_time").text(toTime(hour)); // set the submission date
+
+    </script>
+    <script>
+      function renderEntries() {
+        $("#entries").empty(); // clean the items
+
+        let hourPassed = 1; 
+        for (const entry of entries) {
+          // calculate submissionTime
+          let penalty = 0;
+          let timeSubmitted = "";
+          if (!entry.hourPassed) {
+            penalty = (hourPassed) * -5;
+            timeSubmitted = toTime(hour + hourPassed);
+
+            hourPassed++;
+          } else {
+            penalty = (entry.hourPassed) * -5;
+            timeSubmitted = toTime(hour + entry.hourPassed);
+          }
+          // preload placeholder submissions
+          $("#entries").append(`
+            <tr class="text-center">
+              <td class="border border-black">${entry.matricNumber}</td>
+              <td class="border border-black">${entry.score}</td>
+              <td class="border border-black">${timeSubmitted}</td>
+              <td class="border border-black">${penalty}</td>
+              <td class="border border-black">${entry.score + penalty}</td>
+            </tr> 
+          `);
+        }
+      }
+      renderEntries(); // initialize placeholders
+
+      // function to generate random scores beteween 70-100
+      function randomScore() {
+        return Math.floor(Math.random() * 30) + 70;
+      }
+
+      // function to show snackbar
+      function showSnackbar() {
+        $("#snackbar").removeClass("invisible").addClass("visible");
+
+        // close after 2 seconds
+        setTimeout(() => {
+          $("#snackbar").removeClass("visible").addClass("invisible");
+        }, 2000);
+      }
+
+      $("#submission_form").on("submit", function (e) {
+        e.preventDefault(); // prevent page from reloading
+        let matricNumber = $("#matric_number").val();  // grab the user matric number
+
+        // perfrom validation
+        let index = entries.findIndex(d => d.matricNumber == matricNumber?.trim());
+        if (index != -1) {
+          $("#form_error").text(`${matricNumber} has already submitted`); // show form validation error
+          return;
+        }
+        $("#form_error").text(""); // remove error
+
+        let _hr = new Date().getHours(); // time of submission
+        let hourPassed = Math.abs(_hr - hour);
+
+        let submissionData = {
+          matricNumber,
+          score: randomScore(),
+          hourPassed,
+        };
+        entries.push(submissionData);
+        renderEntries(); // this will add the submission and also calculate the penalty
+        showSnackbar(); // feedback user
+      });
+    </script>
+  </body>
+</html>
